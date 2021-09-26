@@ -48,6 +48,7 @@
 #include <px4_msgs/msg/timesync.hpp>
 #include <px4_msgs/msg/vehicle_command.hpp>
 #include <px4_msgs/msg/vehicle_control_mode.hpp>
+#include <px4_msgs/msg/vehicle_rates_setpoint.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <stdint.h>
 
@@ -64,15 +65,15 @@ public:
 #ifdef ROS_DEFAULT_API
 		offboard_control_mode_publisher_ =
 			this->create_publisher<OffboardControlMode>("fmu/offboard_control_mode/in", 10);
-		trajectory_setpoint_publisher_ =
-			this->create_publisher<TrajectorySetpoint>("fmu/trajectory_setpoint/in", 10);
+		vehicle_rates_setpoint_publisher_ =
+			this->create_publisher<VehicleRatesSetpoint>("fmu/vehicle_rates_setpoint/in", 10);
 		vehicle_command_publisher_ =
 			this->create_publisher<VehicleCommand>("fmu/vehicle_command/in", 10);
 #else
 		offboard_control_mode_publisher_ =
 			this->create_publisher<OffboardControlMode>("fmu/offboard_control_mode/in");
-		trajectory_setpoint_publisher_ =
-			this->create_publisher<TrajectorySetpoint>("fmu/trajectory_setpoint/in");
+        vehicle_rates_setpoint_publisher_ =
+			this->create_publisher<VehicleRatesSetpoint>("fmu/vehicle_rates_setpoint/in");
 		vehicle_command_publisher_ =
 			this->create_publisher<VehicleCommand>("fmu/vehicle_command/in");
 #endif
@@ -115,7 +116,7 @@ private:
 	rclcpp::TimerBase::SharedPtr timer_;
 
 	rclcpp::Publisher<OffboardControlMode>::SharedPtr offboard_control_mode_publisher_;
-	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
+	rclcpp::Publisher<VehicleRatesSetpoint>::SharedPtr vehicle_rates_setpoint_publisher_;
 	rclcpp::Publisher<VehicleCommand>::SharedPtr vehicle_command_publisher_;
 	rclcpp::Subscription<px4_msgs::msg::Timesync>::SharedPtr timesync_sub_;
 
@@ -154,11 +155,11 @@ void OffboardControl::disarm() const {
 void OffboardControl::publish_offboard_control_mode() const {
 	OffboardControlMode msg{};
 	msg.timestamp = timestamp_.load();
-	msg.position = true;
+	msg.position = false;
 	msg.velocity = false;
 	msg.acceleration = false;
 	msg.attitude = false;
-	msg.body_rate = false;
+	msg.body_rate = true;
 
 	offboard_control_mode_publisher_->publish(msg);
 }
@@ -170,14 +171,14 @@ void OffboardControl::publish_offboard_control_mode() const {
  *        vehicle hover at 5 meters with a yaw angle of 180 degrees.
  */
 void OffboardControl::publish_trajectory_setpoint() const {
-	TrajectorySetpoint msg{};
+	VehicleRatesSetpoint msg{};
 	msg.timestamp = timestamp_.load();
-	msg.x = 0.0;
-	msg.y = 0.0;
-	msg.z = -5.0;
-	msg.yaw = -3.14; // [-PI:PI]
+	msg.roll = 2.0;
+	msg.pitch = 0.0;
+	msg.yaw = 0.0;
+	msg.thrust_body = {0,0,-0.75}; // [-PI:PI]
 
-	trajectory_setpoint_publisher_->publish(msg);
+	vehicle_rates_setpoint_publisher_->publish(msg);
 }
 
 /**
