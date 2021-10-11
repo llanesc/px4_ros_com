@@ -65,3 +65,5 @@ rtps:
     receive: true
   - msg: BatteryStatus
     send: true
+  - msg: RcChannels
+    send: true
